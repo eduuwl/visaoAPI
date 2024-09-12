@@ -3,7 +3,7 @@
 import { Request, Response } from 'express';
 import { ILoginDTO } from '../../DTO/LoginDTO';
 import { FiltroAssuntoPaceUseCase } from './FiltroAssuntoPaceUseCase';
-import Processos from '../../config/processos'; // Importando o modelo de Processos
+import Processos from '../../config/processos';
 
 export class FiltroAssuntoPaceController {
   execute: any;
@@ -25,13 +25,10 @@ export class FiltroAssuntoPaceController {
       // Chama o caso de uso que faz a lógica principal e obtém os resultados
       const result = await this.filtroAssuntoPaceUseCase.execute(data, processos);
 
-      // Verifica se há resultados para serem atualizados
-      if (result.length > 0) {
+      if(Array.isArray(result) && result.every(item => item.processo && item.assunto))
         for (const i of result) {
-          // Função simples que atualiza o banco de dados SQLite com o TIPO do processo
-          await this.atualizarTipoProcesso(i.processo, i.assunto);
+          await this.atualizarTipoProcesso(i.processo, i.assunto);  
         }
-      }
 
       // Retorna os resultados em formato JSON
       return response.status(200).json(result);
