@@ -1,7 +1,7 @@
 export async function contestacaoIsInvalid(
   paginaContestacao: string,
 ): Promise<string> {
-  const regex = /TIPO [1-5]/;
+  const regex = /TIPO\s[1-5]/;
 
   const match = paginaContestacao.match(regex);
   if (match) {

@@ -13,13 +13,16 @@ import { getPastaProcessoJudicialUseCase } from '../GetPasta';
 import { getCapaUseCase } from '../GetCapa';
 import { getXPathText } from './helps/GetTextoPorXPATH';
 import { getUsuarioUseCase } from '../GetUsuario';
-import { identificarDivXpathAssunto } from './helps/identificarDivXpathAssunto';
+// import { identificarDivXpathAssunto } from './helps/identificarDivXpathAssunto';
 import { identificarDivXpathAdvogado } from './helps/identificarDivXpathAdvogado';
 import  Processos  from '../../config/processos';
+import { contestacaoIsInvalid } from '../FiltroAssuntoPace/helps/ContestacaoIsInvalid';
+import { getDocumentoUseCase } from '../GetDocumento';
+
 
 interface audienciasTipadas {
   processo: string;
-  assunto: string;
+  tipo: string;
 }
 
 export class FiltroAssuntoPaceUseCase {
@@ -29,9 +32,9 @@ export class FiltroAssuntoPaceUseCase {
   ): Promise<audienciasTipadas[]> {
     console.log('---FILTRO ASSUNTO');
     const response: audienciasTipadas[] = [];
+    console.log(audiencias);
     try {
       const cookie: string = await loginUseCase.execute(data);
-      console.log(audiencias);
 
       const usuario = await getUsuarioUseCase.execute(cookie);
       console.log(usuario[0].nome);
@@ -42,10 +45,15 @@ export class FiltroAssuntoPaceUseCase {
             await getProcessoJudicialUseCase.execute(cookie, audiencia);
 
           const id_processo = processo[0].id.toString();
+          console.log(id_processo);
           const pasta: PastaResponseArray =
             await getPastaProcessoJudicialUseCase.execute(cookie, id_processo);
 
           const NUP = pasta[0].NUP;
+
+          console.log('---------------------------');
+          console.log(usuario[0].nome);
+          console.log('---------------------------');
 
           const objectGetArvoreDocumento: IGetArvoreDocumentoDTO = {
             nup: NUP,
@@ -54,54 +62,101 @@ export class FiltroAssuntoPaceUseCase {
 
           let arrayDeDocumentos: ResponseArvoreDeDocumento[] = [];
           try {
-            arrayDeDocumentos = await getArvoreDocumentoUseCase.execute(
-              objectGetArvoreDocumento,
-            );
+            arrayDeDocumentos = (
+              await getArvoreDocumentoUseCase.execute(objectGetArvoreDocumento)
+            ).reverse();
           } catch (error) {
             console.log('Erro ao buscar árvore de documentos: ', error);
           }
 
-          const objectCapa: ResponseArvoreDeDocumento | undefined =
+          const objectContestacao: ResponseArvoreDeDocumento | undefined =
             arrayDeDocumentos.find(
               (Documento) =>
-                Documento.documentoJuntado.tipoDocumento.nome == 'CAPA' ||
-                Documento.movimento == 'CAPA',
+                Documento.documentoJuntado.tipoDocumento.sigla == 'CONTEST' ||
+                Documento.documentoJuntado.tipoDocumento.sigla == 'PROPACORD',
             );
 
-          console.log('---------------------------');
-          console.log(usuario[0].nome);
-          console.log('---------------------------');
-
-          if (!objectCapa) {
-            console.warn(`CAPA NÃO LOCALIZADA PARA O PROCESSO: ${audiencia}`);
+          if (!objectContestacao) {
+            console.warn(
+              `CONTESTAÇÃO NÃO LOCALIZADA PARA O PROCESSO: ${audiencia}`,
+            );
             continue;
           }
 
-          const capa: string = await getCapaUseCase.execute(NUP, cookie);
-          const capaFormatada = new JSDOM(capa);
-          const divNumberAssunto = identificarDivXpathAssunto(capaFormatada);
-          const xpathAssunto = `/html/body/div/div[${divNumberAssunto}]/table/tbody/tr[2]/td[1]`;
-          const assunto = await getXPathText(capaFormatada, xpathAssunto);
+          const idContestacaoParaPesquisa: number =
+            objectContestacao!.documentoJuntado.componentesDigitais[0].id;
+          const paginaContestacao: string = await getDocumentoUseCase.execute({
+            cookie,
+            idDocument: idContestacaoParaPesquisa,
+          });
+
+          const tipoContestacao = await contestacaoIsInvalid(paginaContestacao);
 
           const objectAudienciaTipada = {
             processo: audiencia,
-            assunto: assunto,
+            tipo: tipoContestacao,
           };
+
+           const capa: string = await getCapaUseCase.execute(NUP, cookie);
+           const capaFormatada = new JSDOM(capa);
+          // const divNumberAssunto = identificarDivXpathAssunto(capaFormatada);
+          // const xpathAssunto = `/html/body/div/div[${divNumberAssunto}]/table/tbody/tr[2]/td[1]`;
+          // const assunto = await getXPathText(capaFormatada, xpathAssunto);
 
           // pega o nome do advogado
           const divNumberAdvogado = identificarDivXpathAdvogado(capaFormatada);
-          const xpathAdvogado = `/html/body/div/div[${divNumberAdvogado}]/table/tbody/tr[2]/td[1]`;  // Linha onde está o nome do advogado
-          const advogado = await getXPathText(capaFormatada, xpathAdvogado);
-
+          async function obterNomeAdvogado(capaFormatada: any): Promise<string | null> {
+            let linhaAtual = 1;
+          
+            while (true) {
+              
+              const xpathHeader = `/html/body/div/div[6]/table/tbody/tr[1]/th[1]`;
+              const advogadoHeader = await getXPathText(capaFormatada, xpathHeader);
+          
+              
+              if (advogadoHeader.trim() === 'Nome') {
+                console.log('Linha correta: ', xpathHeader);
+          
+                
+                const xpathPossiveis = [
+                  `/html/body/div/div[6]/table/tbody/tr[4]/td[1]/div/text()`,
+                  `/html/body/div/div[6]/table/tbody/tr[5]/td[1]/div/text()`,
+                  `/html/body/div/div[6]/table/tbody/tr[3]/td[1]/div/text()`,
+                ];
+          
+                
+                for (const xpath of xpathPossiveis) {
+                  const advogadoNome = await getXPathText(capaFormatada, xpath);
+          
+                  
+                  if (advogadoNome && advogadoNome.trim() !== '' && advogadoNome.trim() !== 'CENTRAL DE ANÁLISE DE BENEFÍCIO - CEAB/INSS') {
+                    console.log('Nome do advogado encontrado: ', advogadoNome);
+                    return advogadoNome.trim(); 
+                  }
+                }
+          
+                console.log('Nenhum nome válido de advogado encontrado.');
+                return null;  
+              }
+          
+              linhaAtual++;  
+            }
+          }
+          
+          // Chamada dentro do seu método execute
+          const advogado = await obterNomeAdvogado(capaFormatada);
           console.log("nome do advogado:", advogado);
-
-          await Processos.update(
-            { TIPO: assunto, ADVOGADO: advogado},
-            { where: { PROCESSO: audiencia} }
-          );
-
+          
+          if (advogado && advogado.trim() !== '') {
+            await Processos.update(
+              { TIPO: tipoContestacao, ADVOGADO: advogado },
+              { where: { PROCESSO: audiencia } }
+            );
+          } else {
+            console.error("Nome do advogado não encontrado ou inválido.");
+          }
+          
           response.push(objectAudienciaTipada);
-
           console.log('PROCESSOS IDENTIFICADOS: ');
           console.log(response);
         } catch (error) {

@@ -4,7 +4,7 @@ import { loginUseCase } from '../LoginUsuario';
 import { IGetArvoreDocumentoDTO } from '../../DTO/GetArvoreDocumentoDTO';
 import { ResponseArvoreDeDocumento } from '../../sapiensOperations/response/ResponseArvoreDeDocumento';
 import { getArvoreDocumentoUseCase } from '../GetArvoreDocumento/index';
-import { contestacaoIsInvalid } from './helps/ContestacaoIsInvalid';
+import { contestacaoIsInvalid } from '../FiltroAssuntoPace/helps/ContestacaoIsInvalid';
 import { getDocumentoUseCase } from '../GetDocumento';
 import { ILoginDTO } from '../../DTO/LoginDTO';
 import { getProcessoJudicialUseCase } from '../GetProcessoJudicial';

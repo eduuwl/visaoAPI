@@ -25,9 +25,9 @@ export class FiltroAssuntoPaceController {
       // Chama o caso de uso que faz a lógica principal e obtém os resultados
       const result = await this.filtroAssuntoPaceUseCase.execute(data, processos);
 
-      if(Array.isArray(result) && result.every(item => item.processo && item.assunto))
+      if(Array.isArray(result) && result.every(item => item.processo && item.tipo))
         for (const i of result) {
-          await this.atualizarTipoProcesso(i.processo, i.assunto);  
+          await this.atualizarTipoProcesso(i.processo, i.tipo);  
         }
 
       // Retorna os resultados em formato JSON
