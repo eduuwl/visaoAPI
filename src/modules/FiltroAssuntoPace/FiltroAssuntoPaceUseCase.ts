@@ -14,6 +14,8 @@ import { getCapaUseCase } from '../GetCapa';
 import { getXPathText } from './helps/GetTextoPorXPATH';
 import { getUsuarioUseCase } from '../GetUsuario';
 import { identificarDivXpathAssunto } from './helps/identificarDivXpathAssunto';
+import { identificarDivXpathAdvogado } from './helps/identificarDivXpathAdvogado';
+import  Processos  from '../../config/processos';
 
 interface audienciasTipadas {
   processo: string;
@@ -85,6 +87,18 @@ export class FiltroAssuntoPaceUseCase {
             processo: audiencia,
             assunto: assunto,
           };
+
+          // pega o nome do advogado
+          const divNumberAdvogado = identificarDivXpathAdvogado(capaFormatada);
+          const xpathAdvogado = `/html/body/div/div[${divNumberAdvogado}]/table/tbody/tr[2]/td[1]`;  // Linha onde está o nome do advogado
+          const advogado = await getXPathText(capaFormatada, xpathAdvogado);
+
+          console.log("nome do advogado:", advogado);
+
+          await Processos.update(
+            { TIPO: assunto, ADVOGADO: advogado},
+            { where: { PROCESSO: audiencia} }
+          );
 
           response.push(objectAudienciaTipada);
 

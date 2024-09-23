@@ -12,6 +12,7 @@ export function getXPathText(html: any, xpathExpression: string): string {
     XPathResult.FIRST_ORDERED_NODE_TYPE,
     null,
   );
+  
   const textoDoXpathNaoExiste = nodes.singleNodeValue == null;
   if (textoDoXpathNaoExiste) {
     return 'SEM ASSUNTO';
