@@ -15,7 +15,7 @@ export function getXPathText(html: any, xpathExpression: string): string {
   
   const textoDoXpathNaoExiste = nodes.singleNodeValue == null;
   if (textoDoXpathNaoExiste) {
-    return 'SEM ASSUNTO';
+    return 'ADVOGADO NÃO ENCONTRADO';
   }
   return nodes.singleNodeValue.textContent;
 }

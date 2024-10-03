@@ -14,7 +14,7 @@ import { getCapaUseCase } from '../GetCapa';
 import { getXPathText } from './helps/GetTextoPorXPATH';
 import { getUsuarioUseCase } from '../GetUsuario';
 // import { identificarDivXpathAssunto } from './helps/identificarDivXpathAssunto';
-import { identificarDivXpathAdvogado } from './helps/identificarDivXpathAdvogado';
+// import { identificarDivXpathAdvogado } from './helps/identificarDivXpathAdvogado';
 import  Processos  from '../../config/processos';
 import { contestacaoIsInvalid } from '../FiltroAssuntoPace/helps/ContestacaoIsInvalid';
 import { getDocumentoUseCase } from '../GetDocumento';
@@ -99,18 +99,38 @@ export class FiltroAssuntoPaceUseCase {
 
            const capa: string = await getCapaUseCase.execute(NUP, cookie);
            const capaFormatada = new JSDOM(capa);
+
           // const divNumberAssunto = identificarDivXpathAssunto(capaFormatada);
           // const xpathAssunto = `/html/body/div/div[${divNumberAssunto}]/table/tbody/tr[2]/td[1]`;
           // const assunto = await getXPathText(capaFormatada, xpathAssunto);
 
+          //identifica o xpath exato da div
+          async function identificarDivXpathAdvogado(capaFormatada: any): Promise<string | null> {
+            const divs = ['6', '7', '8', '9', '10'];
+            for (const div of divs) {
+              const xpathHeader = `/html/body/div/div[${div}]/table/tbody/tr[1]/th[1]`;
+              const advogadoHeader = await getXPathText(capaFormatada, xpathHeader);
+
+              if (advogadoHeader && advogadoHeader.trim() === 'Nome') {
+                console.log('linha correta encontrada na div[${div}]');
+                return div;
+              } 
+            }
+
+            console.log('Nenhum div contendo o cabeçalho "Nome" foi encontrado.');
+            return null;
+          }
+
           // pega o nome do advogado
-          const divNumberAdvogado = identificarDivXpathAdvogado(capaFormatada);
           async function obterNomeAdvogado(capaFormatada: any): Promise<string | null> {
-            let linhaAtual = 1;
-          
-            while (true) {
+            const divNumberAdvogado = await identificarDivXpathAdvogado(capaFormatada);
+
+            if (!divNumberAdvogado) {
+              console.log('Div correto não encontrado.');
+              return null;
+            }
               
-              const xpathHeader = `/html/body/div/div[6]/table/tbody/tr[1]/th[1]`;
+              const xpathHeader = `/html/body/div/div[${divNumberAdvogado}]/table/tbody/tr[1]/th[1]`;
               const advogadoHeader = await getXPathText(capaFormatada, xpathHeader);
           
               
@@ -119,19 +139,26 @@ export class FiltroAssuntoPaceUseCase {
           
                 
                 const xpathPossiveis = [
-                  `/html/body/div/div[6]/table/tbody/tr[4]/td[1]/div/text()`,
-                  `/html/body/div/div[6]/table/tbody/tr[5]/td[1]/div/text()`,
-                  `/html/body/div/div[6]/table/tbody/tr[3]/td[1]/div/text()`,
+                  `/html/body/div/div[${divNumberAdvogado}]/table/tbody/tr[2]/td[1]/div/text()`,
+                  `/html/body/div/div[${divNumberAdvogado}]/table/tbody/tr[3]/td[1]/div/text()`,
+                  `/html/body/div/div[${divNumberAdvogado}]/table/tbody/tr[4]/td[1]/div/text()`,
+                  `/html/body/div/div[${divNumberAdvogado}]/table/tbody/tr[5]/td[1]/div/text()`
                 ];
           
-                
                 for (const xpath of xpathPossiveis) {
                   const advogadoNome = await getXPathText(capaFormatada, xpath);
           
-                  
-                  if (advogadoNome && advogadoNome.trim() !== '' && advogadoNome.trim() !== 'CENTRAL DE ANÁLISE DE BENEFÍCIO - CEAB/INSS') {
+                  if (
+                     advogadoNome &&
+                     advogadoNome.trim() !== '' &&
+                     advogadoNome.trim() !== 'CENTRAL DE ANÁLISE DE BENEFÍCIO - CEAB/INSS' &&
+                     advogadoNome.trim() !== 'CENTRAL DE ANÁLISE DE BENEFÍCIO CEAB INSS' &&
+                     advogadoNome.trim() !== 'CENTRAL ANALISE BENEFICIO CEAB INSS' &&
+                     advogadoNome.trim() !== 'PROCURADORIA FEDERAL NOS ESTADOS E NO DISTRITO FEDERAL' &&
+                     advogadoNome.trim() !== 'PROCURADORIA FEDERAL NOS ESTADOS NO DISTRITO FEDERAL' 
+                    ) {
                     console.log('Nome do advogado encontrado: ', advogadoNome);
-                    return advogadoNome.trim(); 
+                    return advogadoNome.trim();
                   }
                 }
           
@@ -139,11 +166,11 @@ export class FiltroAssuntoPaceUseCase {
                 return null;  
               }
           
-              linhaAtual++;  
-            }
+              console.log('Cabeçalho "Nome" não encontrado.');
+              return null;  
+            
           }
           
-          // Chamada dentro do seu método execute
           const advogado = await obterNomeAdvogado(capaFormatada);
           console.log("nome do advogado:", advogado);
           
