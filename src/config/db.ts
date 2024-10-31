@@ -1,9 +1,8 @@
 import { Sequelize } from 'sequelize';
-
-// Conectar ao banco de dados SQLite que está no zepellin
-const sequelize = new Sequelize({
-  dialect: 'sqlite',
-  storage: 'C:/Users/eduardoc.silva/Desktop/zepellin/database.sqlite', 
+const sequelize = new Sequelize('processos_db', 'postgres', 'shazam', {
+  host: 'localhost',
+  port: 5435,
+  dialect: 'postgres',
 });
 
-export default sequelize;
+module.exports = sequelize;

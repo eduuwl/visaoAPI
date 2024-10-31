@@ -1,7 +1,7 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import sequelize from './db';  
 
-// Definir os atributos da tabela 'Processos'
+
 interface ProcessosAttributes {
     ORGAO: string;
     PROCESSO: string;
@@ -12,11 +12,11 @@ interface ProcessosAttributes {
     DATA: Date;
     LIQUIDO: string;
     GRAU: string;
-    TIPO?: string;       // Pode ser nulo
-    ADVOGADO?: string;   // Pode ser nulo
+    TIPO?: string;     
+    ADVOGADO?: string;   
 }
 
-// Definir os atributos opcionais (para quando criar um novo processo, alguns campos podem não ser fornecidos)
+
 interface ProcessosCreationAttributes extends Optional<ProcessosAttributes, 'TIPO' | 'ADVOGADO'> {}
 
 // Definir o modelo de Processos
@@ -31,11 +31,11 @@ class Processos extends Model<ProcessosAttributes, ProcessosCreationAttributes>
     public DATA!: Date;
     public LIQUIDO!: string;
     public GRAU!: string;
-    public TIPO?: string;    // Campo opcional
-    public ADVOGADO?: string;  // Campo opcional
+    public TIPO?: string;    
+    public ADVOGADO?: string; 
 }
 
-// Inicializar o modelo de Processos com Sequelize
+
 Processos.init({
     ORGAO: {
         type: DataTypes.STRING,
@@ -76,16 +76,16 @@ Processos.init({
     },
     TIPO: {
         type: DataTypes.STRING,
-        allowNull: true,  // Pode ser nulo
+        allowNull: true,  
     },
     ADVOGADO: {
         type: DataTypes.STRING,
-        allowNull: true,  // Pode ser nulo
+        allowNull: true,  
     },
 }, {
-    sequelize,  // Conexão com o banco de dados
-    modelName: 'Processos',  // Nome do modelo
-    tableName: 'Processos',  // Nome da tabela no banco de dados
+    sequelize,  
+    modelName: 'Processos',  
+    tableName: 'Processos',  
 });
 
 export default Processos;

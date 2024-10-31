@@ -2,7 +2,7 @@ import express from 'express';
 import { FiltroAssuntoPaceController } from './FiltroAssuntoPaceController';
 import { FiltroAssuntoPaceUseCase } from './FiltroAssuntoPaceUseCase';
 import { FiltroAssuntoPaceTestController } from './FiltroAssuntoPaceTestController';
-import sequelize from '../../config/db'; // Ajuste o caminho conforme necessário
+import sequelize from '../../config/db'; 
 
 sequelize.sync({ force: false }) 
   .then(() => {
